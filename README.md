@@ -60,6 +60,7 @@ Built with: Python, Scikit-learn, Streamlit
 
 ✨ Demo
 Check out Demo Video on YouTube
+https://youtu.be/-zSGI8kVX30?si=ERzUfDQUkTJJyt2w
 
 
 ##Check out project on my Streamlit App Link
