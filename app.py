@@ -1,22 +1,23 @@
+import streamlit as st
 import joblib
-from flask import Flask, request, jsonify
 
-app = Flask(__name__)
+# Load trained model
 model = joblib.load("spam_model.pkl")
 
-@app.route("/predict", methods=["POST"])
-def predict():
-    data = request.json
-    message = data.get("message", "")
+st.title("📩 SpamShield - SMS Spam Detection")
+st.write("Enter a message to check if it's Spam or Not.")
 
-    # Prediction
-    prediction = model.predict([message])[0]
-    probability = model.predict_proba([message])[0][1]  # Spam probability
+# Input field
+message = st.text_area("Enter your message:")
 
-    return jsonify({
-        "prediction": "Spam 🚨" if prediction == 1 else "Not Spam ✅",
-        "confidence": f"{probability*100:.2f}%"
-    })
+if st.button("Predict"):
+    if message.strip() == "":
+        st.warning("Please enter a message.")
+    else:
+        prediction = model.predict([message])[0]
+        probability = model.predict_proba([message])[0][1]
 
-if __name__ == "__main__":
-    app.run(debug=True)
+        if prediction == 1:
+            st.error(f"🚨 Spam Detected!\n\nConfidence: {probability*100:.2f}%")
+        else:
+            st.success(f"✅ Not Spam.\n\nConfidence: {(1 - probability)*100:.2f}%")
