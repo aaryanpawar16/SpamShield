@@ -4,40 +4,36 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 
-# Load model and vectorizer
+# Load pipeline model (includes vectorizer + classifier)
 model = joblib.load("spam_model.pkl")
-vectorizer = joblib.load("vectorizer.pkl")
 
-# App title and description
+# App UI setup
 st.set_page_config(page_title="SpamShield", layout="centered")
 st.title("📩 SpamShield - SMS Spam Detection")
 st.markdown("Enter one or more messages (one per line) to check if they're **Spam** or **Not**.")
 
-# User input
+# Input field
 input_text = st.text_area("Enter your message(s) below:", height=250)
 
 if st.button("🔍 Analyze"):
     if input_text.strip() == "":
         st.warning("Please enter at least one message.")
     else:
-        # Split input into individual messages
-        raw_messages = input_text.split("\n")
-        # Clean messages: ensure strings and remove empty ones
-        messages = [str(msg).strip() for msg in raw_messages if str(msg).strip()]
+        messages = [str(msg).strip() for msg in input_text.split("\n") if msg.strip()]
 
         if not messages:
             st.warning("All input lines were empty or invalid.")
         else:
-            # Vectorize input safely
             try:
-                transformed_msgs = vectorizer.transform(messages)
-                predictions = model.predict(transformed_msgs)
-                confidences = model.predict_proba(transformed_msgs).max(axis=1) * 100
+                # Don't transform — model already includes vectorizer
+                predictions = model.predict(messages)
+                confidences = model.predict_proba(messages).max(axis=1) * 100
             except Exception as e:
                 st.error("⚠️ Error during prediction. Please check your input.")
                 st.exception(e)
                 st.stop()
 
+            # Output results
             st.markdown("## 🧾 Results:")
             for i, (msg, label, confidence) in enumerate(zip(messages, predictions, confidences)):
                 label_display = (
@@ -54,7 +50,7 @@ if st.button("🔍 Analyze"):
                 </div>
                 """, unsafe_allow_html=True)
 
-            # Summary chart
+            # Summary pie chart
             st.markdown("### 📊 Spam vs Not Spam Summary")
             spam_count = sum(1 for label in predictions if label == 1)
             not_spam_count = len(predictions) - spam_count
@@ -69,13 +65,9 @@ if st.button("🔍 Analyze"):
                          title='📈 Message Type Distribution')
             st.plotly_chart(fig, use_container_width=True)
 
-            # Average confidence
-            avg_confidence_spam = np.mean(
-                [conf for pred, conf in zip(predictions, confidences) if pred == 1]
-            ) if spam_count else 0
-            avg_confidence_not_spam = np.mean(
-                [conf for pred, conf in zip(predictions, confidences) if pred == 0]
-            ) if not_spam_count else 0
+            # Confidence summary
+            avg_confidence_spam = np.mean([conf for pred, conf in zip(predictions, confidences) if pred == 1]) if spam_count else 0
+            avg_confidence_not_spam = np.mean([conf for pred, conf in zip(predictions, confidences) if pred == 0]) if not_spam_count else 0
 
             st.markdown(f"""
             ### 📌 Average Confidence:
